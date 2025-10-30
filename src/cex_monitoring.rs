@@ -34,7 +34,7 @@ impl CexMonitoring {
             .await
             .wrap_err("Failed to subscribe to CEX websocket!")?;
 
-        let mut book_params = BookSubscription::new(vec![trading_pair.into()]);
+        let mut book_params = BookSubscription::new(vec![trading_pair]);
         book_params.depth = Some(Self::ORDER_BOOK_DEPTH);
         book_params.snapshot = Some(true);
         let subscription = Message::new_subscription(book_params, 0);
@@ -100,7 +100,11 @@ impl CexMonitoring {
             }
         }
 
-        if let Err(e) = self.arbitrage_bot_sender.send(self.order_book.clone()).await {
+        if let Err(e) = self
+            .arbitrage_bot_sender
+            .send(self.order_book.clone())
+            .await
+        {
             bail!(format!("Arbitrage bot channel closed: {:?}", e));
         }
 

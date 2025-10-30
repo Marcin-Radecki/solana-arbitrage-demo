@@ -1,17 +1,23 @@
 use std::{env, io};
-use tokio::sync::mpsc::{channel};
+use tokio::sync::mpsc::channel;
 
-use crate::{agent::ArbitrageAgent, cex_monitoring::CexMonitoring, config::CliArgs, dex_monitoring::{DexData, DexMonitoring}, order_book::OrderBook};
+use crate::{
+    agent::ArbitrageAgent,
+    cex_monitoring::CexMonitoring,
+    config::CliArgs,
+    dex_monitoring::{DexData, DexMonitoring},
+    order_book::OrderBook,
+};
 
+mod agent;
 mod cex_monitoring;
 mod config;
 mod dex_monitoring;
 mod order_book;
-mod agent;
 
 use clap::Parser;
 use eyre::{Result, eyre};
-use tracing::{error};
+use tracing::error;
 use tracing_subscriber::EnvFilter;
 
 fn init_logging() -> Result<()> {
@@ -46,18 +52,15 @@ async fn main() {
     });
 
     let (dex_messages_to_bot, dex_messages_from_bot) = channel::<DexData>(32);
-    let dex_monitoring = DexMonitoring::new(
-        dex_messages_to_bot,
-        cli_args.clone(),
-    )
-    .await
-    .expect("Failed to create DEX Monitoring!");
+    let dex_monitoring = DexMonitoring::new(dex_messages_to_bot, cli_args.clone())
+        .await
+        .expect("Failed to create DEX Monitoring!");
     let dex_monitor_handle = tokio::spawn(async move {
         if let Err(e) = dex_monitoring.run().await {
             error!("DEX Monitoring task failed: {}", e);
         }
     });
-    
+
     let mut agent = ArbitrageAgent::new(cli_args, cex_messages_from_bot, dex_messages_from_bot);
     let agent_handle = tokio::spawn(async move {
         if let Err(e) = agent.run().await {

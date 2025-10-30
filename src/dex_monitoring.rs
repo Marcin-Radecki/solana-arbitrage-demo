@@ -30,10 +30,7 @@ pub struct DexMonitoring {
 }
 
 impl DexMonitoring {
-    pub async fn new(
-        messages_to_bot: Sender<DexData>,
-        config: CliArgs,
-    ) -> Result<Self> {
+    pub async fn new(messages_to_bot: Sender<DexData>, config: CliArgs) -> Result<Self> {
         Ok(Self {
             messages_to_bot,
             ws_client: PubsubClient::new(&config.ws_endpoint).await?,
@@ -57,11 +54,9 @@ impl DexMonitoring {
             token_mint_a.decimals,
             token_mint_b.decimals,
         );
-        let pool_price =  Decimal::from_f64(current_price)
-                .ok_or(eyre::eyre!("Failed to convert f64 to Decimal!"))?;
-        let dex_data = DexData {
-            pool_price,
-        };
+        let pool_price = Decimal::from_f64(current_price)
+            .ok_or(eyre::eyre!("Failed to convert f64 to Decimal!"))?;
+        let dex_data = DexData { pool_price };
         Ok(dex_data)
     }
 
@@ -88,10 +83,10 @@ impl DexMonitoring {
                 .decode()
                 .ok_or(eyre::eyre!("Failed to decode account data!"))?;
             let whirlpool = Whirlpool::from_bytes(account_data)?;
-            
+
             let dex_data = self.parse_account_update(whirlpool).await?;
             debug!("{:?}", dex_data);
-            
+
             if let Err(e) = self.messages_to_bot.send(dex_data).await {
                 bail!(format!("Arbitrage bot channel closed: {:?}", e));
             }

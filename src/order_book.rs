@@ -1,5 +1,5 @@
 use kraken_async_rs::wss::BidAsk;
-use rust_decimal::{Decimal};
+use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 
 type CexMarketPriceType = Decimal;
